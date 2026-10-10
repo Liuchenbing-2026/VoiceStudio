@@ -3297,6 +3297,7 @@ class SherpaOnnxBackend(TTSBackend):
 # the descriptor below.
 
 _LAZY_REGISTRY: dict[str, tuple[str, str]] = {
+    "vllm-omni": ("engines.vllm_omni", "VLLMOmniBackend"),
     "indextts2": ("engines.indextts", "IndexTTS2Backend"),
     # Phase 4 Plan 04-01 (GGUF-03): hardware-adaptive GGUF runtime wrapper.
     # Lazy so the import of services.tts_backend doesn't pull
@@ -3428,6 +3429,7 @@ _LAST_ERRORS: dict[str, str] = {}
 # Short install hints surfaced as tooltips on the Model Catalogue UI.
 # Helps users understand what pip package to install and where.
 _INSTALL_HINTS: dict[str, str] = {
+    "vllm-omni": "Start an OmniVoice vLLM-Omni service and configure OMNIVOICE_VLLM_OMNI_URL.",
     "omnivoice":     "pip install omnivoice  (bundled — no extra install needed)",
     "omnivoice-subprocess": "No extra install; uses the host OmniVoice install. Opt in with OMNIVOICE_TTS_BACKEND=omnivoice-subprocess (same model in a killable sidecar, for unattended reliability).",
     "cosyvoice":     "git clone --recursive FunAudioLLM/CosyVoice + pip install -r requirements.txt + SoX",
@@ -3456,6 +3458,7 @@ _INSTALL_HINTS: dict[str, str] = {
 # var each engine's is_available() actually reads. bash/zsh form (the dominant
 # clone-and-run workflow for these engines; dots.tts is *nix-only anyway).
 _SETUP_SNIPPETS: dict[str, str] = {
+    "vllm-omni": "export OMNIVOICE_VLLM_OMNI_URL=http://127.0.0.1:18091",
     "indextts2":      "export OMNIVOICE_INDEXTTS_DIR=/path/to/index-tts",
     "moss-tts-v15":   "export OMNIVOICE_MOSS_TTS_V15_DIR=/path/to/MOSS-TTS",
     "dots-tts":       "export OMNIVOICE_DOTS_TTS_DIR=/path/to/dots.tts",
@@ -3475,6 +3478,7 @@ _SETUP_SNIPPETS: dict[str, str] = {
 # Keyed on the engine id, so it stays correct when the doc filename does not
 # match the id (indextts2 → indextts.md).
 _ENGINE_DOCS: dict[str, str] = {
+    "vllm-omni": "docs/engines/vllm-omni.md",
     "omnivoice":            "docs/engines/omnivoice.md",
     "omnivoice-subprocess": "docs/engines/omnivoice-subprocess.md",
     "omnivoice-gguf":       "docs/engines/omnivoice-gguf.md",

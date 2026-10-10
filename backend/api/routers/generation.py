@@ -1888,6 +1888,18 @@ async def generate_speech(
     from services.tts_backend import ensure_engine_licence
     ensure_engine_licence(backend_cls)
 
+    validate_options = getattr(backend_cls, "validate_generation_options", None)
+    if callable(validate_options):
+        try:
+            validate_options(
+                duration=duration, denoise=denoise, t_shift=t_shift,
+                layer_penalty_factor=layer_penalty_factor,
+                position_temperature=position_temperature,
+                class_temperature=class_temperature,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     # A design request on an engine that needs a reference clip would only
     # fail inside the engine, after a model load, and a reference on an
     # engine that can't clone would be silently dropped. Say so before any work.

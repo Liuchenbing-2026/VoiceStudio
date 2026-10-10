@@ -74,7 +74,7 @@ def resolve_trusted_endpoint(url: str) -> ResolvedEndpoint:
 # sub-path; requests that do name a sub-path must pick from this allowlist
 # so a misconfigured caller cannot route an arbitrary path at a trusted
 # origin. Add new entries only with a documented, well-known inference route.
-_ALLOWED_SUBPATHS: frozenset[str] = frozenset({"tts"})
+_ALLOWED_SUBPATHS: frozenset[str] = frozenset({"tts", "v1/models", "v1/audio/speech"})
 
 
 def _endpoint_path(requested_path: str) -> str:
@@ -127,7 +127,7 @@ def open_trusted_endpoint(
     """Open one request without redirects, pinned to the validated DNS answer.
 
     ``path`` defaults to ``""`` (the origin itself) and is restricted to a
-    small allowlist of known inference routes (``/tts`` today); anything else
+    small allowlist of known inference routes (``/tts`` and vLLM-Omni speech); anything else
     is rejected so a misconfigured caller cannot route an arbitrary path at
     a trusted origin.
 
