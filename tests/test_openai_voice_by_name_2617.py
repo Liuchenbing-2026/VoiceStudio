@@ -148,10 +148,30 @@ def test_duplicate_names_are_a_409_listing_ids(client, engine, profiles):
 
 def test_id_wins_over_a_profile_named_like_that_id(client, engine, profiles):
     target = profiles(f"Target {profiles.stem}")
-    profiles(target)  # a second profile whose NAME is the first one's id
+    other = profiles(target)  # a second profile whose NAME is the first one's id
     res = _speak(client, target)
     assert res.status_code == 200, res.text
     assert engine.calls[-1]["ref_audio"].endswith(f"{target}.wav")
+    voices = {v["voice_id"]: v for v in client.get("/v1/audio/voices").json()["voices"]}
+    assert voices[target]["addressable_by_name"] is True
+    assert voices[other]["addressable_by_name"] is False
+
+
+@pytest.mark.parametrize("variant", ["self_id", "uppercase", "whitespace"])
+def test_voice_list_preserves_self_id_and_nonexact_id_names(client, engine, profiles, variant):
+    target = f"{profiles.stem}-target"
+    if variant == "self_id":
+        selected = profiles(target, pid=target)
+        name = target
+    else:
+        profiles(f"Target {profiles.stem}", pid=target)
+        name = target.upper() if variant == "uppercase" else f" {target} "
+        selected = profiles(name)
+    voices = {v["voice_id"]: v for v in client.get("/v1/audio/voices").json()["voices"]}
+    assert voices[selected]["addressable_by_name"] is True
+    response = _speak(client, name)
+    assert response.status_code == 200, response.text
+    assert engine.calls[-1]["ref_audio"].endswith(f"{selected}.wav")
 
 
 def test_openai_alias_and_default_keep_their_meaning(client, engine, profiles):

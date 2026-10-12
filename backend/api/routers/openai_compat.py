@@ -1317,15 +1317,19 @@ def list_voices():
                 "SELECT id, name, language FROM voice_profiles ORDER BY name"
             ).fetchall()
         name_counts = Counter(_voice_name_key(r["name"]) for r in rows)
+        profile_ids = {r["id"] for r in rows}
         for row in rows:
             key = _voice_name_key(row["name"])
+            # Exact IDs win over names in the speech resolver; self-ID names
+            # still address this profile, and nonexact spellings use names.
+            other_id = row["name"] in profile_ids and row["name"] != row["id"]
             voices.append({
                 "voice_id": row["id"],
                 "name": row["name"],
                 "type": "profile",
                 "language": row["language"],
                 "addressable_by_name": bool(key) and name_counts[key] == 1
-                and not _name_is_reserved(key),
+                and not _name_is_reserved(key) and not other_id,
             })
     except Exception:
         logger.warning("Voice profiles could not be loaded; returning built-in aliases only")
