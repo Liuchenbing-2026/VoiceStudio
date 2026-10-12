@@ -1,5 +1,7 @@
 """Second-pass ASR QC scoring (Wave 3.3 / Spec 5) — pure, no ASR/main import."""
 
+import unicodedata
+
 import pytest
 
 from services.dub_qc import score_dub, word_error_rate
@@ -57,6 +59,29 @@ def test_wer_no_space_script_punctuation_is_stripped():
 
 def test_wer_spaced_scripts_keep_word_tokens():
     assert word_error_rate("naïve café", "naïve cafe") == pytest.approx(1 / 2)
+
+
+@pytest.mark.parametrize("text", ["naïve café", "\u30ac\u30e9\u30b9", "\ud55c\uae00", "a\u0315\u0300"])
+@pytest.mark.parametrize("decomposed_target", [True, False])
+def test_canonical_spellings_preserve_qc_text_and_timing(text, decomposed_target):
+    decomposed = unicodedata.normalize("NFD", text)
+    target = decomposed if decomposed_target else text
+    heard = text if decomposed_target else decomposed
+    segment = {"id": "cue", "start": 0.0, "end": 3.0, "text": target}
+    result = score_dub([segment], [{"start": 0.1, "end": 2.9, "text": heard}])[0]
+    assert result.drift == 0.0
+    assert result.flagged is False
+    assert result.target_text == target
+    assert result.recognized_text == heard
+    assert segment["text"] == target
+    assert (result.new_start, result.new_end) == (0.1, 2.9)
+
+
+def test_canonical_scoring_preserves_meaningful_differences():
+    assert word_error_rate(unicodedata.normalize("NFD", "naïve café"), "naïve cafe") == 0.5
+    assert word_error_rate("\u30ac\u30e9\u30b9", "\u30ab\u30e9\u30b9") == pytest.approx(1 / 3)
+    assert word_error_rate("the cat sat", "the dog sat") == pytest.approx(1 / 3)
+    assert word_error_rate("\ufb01le", "file") == 1.0
 
 
 # ── score_dub ────────────────────────────────────────────────────────────────
