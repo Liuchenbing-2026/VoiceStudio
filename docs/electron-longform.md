@@ -71,3 +71,9 @@ The finished-render library filters for Stories and Audiobooks before applying i
 Resuming starts a fresh job while preserving the original checkpoint until all chapters render successfully. Checkpoint writes and syncs are best effort, so an interrupted resumed job can leave both the original and new checkpoints available; either can reuse the shared chapter cache. Closing an unstarted response or interrupting the render leaves the original plan available, including when a replacement checkpoint could not be saved. A render with no failed chapters retires the original even if the replacement checkpoint could not be saved. A partial output keeps the original plan available to retry its failed chapters.
 
 Cache pruning evicts the oldest chapter and segment audio, including interrupted partial files, while retaining JSON bookkeeping needed to locate older cache entries after moving the data directory. Bookkeeping contributes to the reported cache size; if it alone exceeds the budget, pruning remains best effort.
+
+Pronunciation entry order is part of the chapter cache identity: equal-length
+case variants use the later entry's replacement. Reordering those entries
+refreshes the chapter instead of replaying an earlier pronunciation. Unchanged
+lexicons still reuse the cache; existing nonempty lexicons refresh once under
+the corrected key, while renders without a lexicon keep their previous keys.

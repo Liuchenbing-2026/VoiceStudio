@@ -8,6 +8,10 @@ metadata and the backend fallback mirror it.
 
 ## [Unreleased]
 
+**Highlights**
+
+- Audiobook chapter caches refresh when pronunciation entry order changes the spoken replacement. (#2728)
+
 ## [0.5.7] — 2026-10-12
 
 **VoiceStudio now runs on PCs without a GPU and recovers instead of giving up.** Voice cloning uses the speech-to-text model you installed from Model Catalogue, GPU-less computers get the small CPU PyTorch build, and slow or busy backends are no longer reported as failed.

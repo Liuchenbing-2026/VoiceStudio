@@ -52,3 +52,28 @@ def test_autodetect_key_is_unchanged_by_the_language_fold(tmp_path):
     a = _render(tmp_path, [], "a", language=None)[0]
     b = _render(tmp_path, [], "b", language=None)[0]
     assert a == b
+
+
+def test_pronunciation_precedence_change_invalidates_chapter_cache(tmp_path):
+    calls = []
+    chapter = Chapter(title="C", spans=[Span(voice_id=None, text="GIF", pause_ms_after=0)])
+
+    def synth(text, voice_id, speed=None):
+        calls.append(text)
+        return torch.full((2400,), 0.1 if text == "last" else 0.2)
+
+    def render(lexicon):
+        return _render_chapter_cached(chapter, synth, 24000, "eng", _NO_VOICE,
+                                      str(tmp_path), lexicon)
+
+    original = {"GIF": "first", "gif": "last"}
+    reordered = {"gif": "last", "GIF": "first"}
+    first_path, _, cached, _ = render(original)
+    assert not cached
+    assert calls == ["last"]
+    second_path, _, cached, _ = render(reordered)
+    assert not cached
+    assert second_path != first_path
+    assert calls == ["last", "first"]
+    assert render(reordered)[2] is True
+    assert calls == ["last", "first"]
