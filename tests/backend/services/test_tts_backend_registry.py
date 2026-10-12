@@ -273,16 +273,31 @@ def test_curated_models_not_present_on_other_backends(registry_sandbox):
         assert "active_model_id" not in entry
 
 
-def test_isolation_mode_in_process_vs_subprocess(registry_sandbox):
+@pytest.mark.parametrize("family, expected_mode", [
+    ("mps", "subprocess"),
+    ("cpu", "in-process"),
+    ("cuda", "in-process"),
+    ("rocm", "in-process"),
+    ("xpu", "in-process"),
+    ("npu", "in-process"),
+])
+def test_isolation_mode_in_process_vs_subprocess(registry_sandbox, monkeypatch, family, expected_mode):
     """SubprocessBackend subclasses get isolation_mode='subprocess'; others 'in-process'."""
+    from dataclasses import replace
+    from core import device_caps
+
+    caps = replace(device_caps.detect_host_caps(), family=family,
+                   available_families=("cpu",) if family == "cpu" else ("cpu", family))
+    monkeypatch.setattr(device_caps, "detect_host_caps", lambda: caps)
     registry_sandbox["fake-sub"] = FakeSubBackend
     registry_sandbox["healthy-inproc"] = HealthyInProcessBackend
     out = {entry["id"]: entry for entry in list_backends()}
 
     assert out["fake-sub"]["isolation_mode"] == "subprocess"
     assert out["healthy-inproc"]["isolation_mode"] == "in-process"
-    # The pre-existing OmniVoice backend is in-process — sanity check.
-    assert out["omnivoice"]["isolation_mode"] == "in-process"
+    # The canonical ID uses the killable sidecar on MPS; other host families
+    # retain the in-process adapter. Check both contracts on every runner.
+    assert out["omnivoice"]["isolation_mode"] == expected_mode
 
 
 def test_last_error_cleared_after_recovery(registry_sandbox):
